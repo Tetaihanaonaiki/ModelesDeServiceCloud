@@ -11,11 +11,11 @@ doc:
 deploy:
 	@docker rm -f /$(APP_NAME);echo 1;
 	@docker run -i --rm -d --name $(APP_NAME) \
-		-v "${PWD}/deploy_master.yml:/home/deploy_master.yml" \
+		-v "${PWD}/deploy.yml:/home/deploy.yml" \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		--env-file=.env \
 	docker.io/maissacrement/ansibledind:latest
 
 exec: deploy
-	@docker exec -it $(APP_NAME) /bin/bash -c "ansible-playbook /home/deploy_master.yml"
+	@docker exec -it $(APP_NAME) /bin/bash -c "ansible-playbook /home/deploy.yml"
 	@docker rm -f /$(APP_NAME);echo 1;

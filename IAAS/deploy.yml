@@ -1,4 +1,4 @@
----
+
 - hosts: localhost
   connection: local
 
@@ -15,41 +15,41 @@
       shell: az login --username "{{lookup('env', 'email')}}" --password "{{lookup('env', 'password')}}"
       register: ps
 
-    - name: Ressource group doc
-      debug:
-        msg: "Go to ressource group doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_resourcegroup_module.html"
-
-    - name: Create resource group
+    - name: Create a resource group
       azure_rm_resourcegroup:
+       name: dprk2
+       location : eastus
 
-    - name: Virtual network
-      debug:
-        msg: "Go to virtual network doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_virtualnetwork_module.html"
-
-    
-    - name: Create virtual network
+    - name: Create Virtual network
       azure_rm_virtualnetwork:
-        ...
+        resource_group: dprk2
+        name: dprk2_lan
+        address_prefixes_cidr: 
+          - 10.11.12.0/24
+          #msg: "Go to virtual network doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_virtualnetwork_module.html"
 
-    - name: Subnet
-      debug:
-        msg: "Go to subnet doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_subnet_module.html"
-
-    - name: Create subnet
+    - name: Create a Subnet
       azure_rm_subnet:
-        ...
+        resource_group: dprk2
+        virtual_network_name: dprk2_lan
+        name: dprk2_subnet
+        address_prefix_cidr: "10.11.12.0/24"
+        #msg: "Go to subnet doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_subnet_module.html"
 
-    - name: Public IP address
-      debug:
-        msg: "Go to public ip address https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_publicipaddress_module.html"
-
-    - name: Create public IP address
+    - name: Create a public ip address
       azure_rm_publicipaddress:
-        name: "{{public_ip_name}}"
-        ...
-
+        resource_group: dprk2
+        name: dprk2_public_ip
+        allocation_method: static
+        domain_name: dprk
       register: output_ip_address
 
+
+    # Vous pouvez laisser cette partie en bas inchangée, pourvu que les noms de 
+    # variables pour les tasks suivantes "Network Security Group", "Network Interface" 
+    # et "Create your Windows VM".
+
+      
     # Vous pouvez laisser cette partie en bas inchangée, pourvu que les noms de 
     # variables pour les tasks suivantes "Network Security Group", "Network Interface" 
     # et "Create your Windows VM".
@@ -58,65 +58,82 @@
       debug:
         msg: "The public IP is {{ output_ip_address.state.ip_address }}"
 
-    - name: Network Security Group
-      debug:
-        msg: "Go to Network Security Group doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_securitygroup_module.html"
+    #- name: Network Security Group
+    #  debug:
+    #    msg: "Go to Network Security Group doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_securitygroup_module.html"
 
     - name: Create Network Security Group
       azure_rm_securitygroup:
-        resource_group: ansible-rg
-        name: "{{security_group_name}}"
-        #rules:
-        #  - name: 'allow_rdp'
-        #    protocol: Tcp
-        #    destination_port_range: 3389
-        #    access: Allow
-        #    priority: 1001
-        #    direction: Inbound
-        #  - name: 'allow_web_traffic'
-        #    protocol: Tcp
-        #    destination_port_range:
-        #      - 80
-        #      - 443
-        #    access: Allow
-        #    priority: 1002
-        #    direction: Inbound
-        #  - name: 'allow_powershell_remoting'
-        #    protocol: Tcp
-        #    destination_port_range: 
-        #      - 5985
-        #      - 5986
-        #    access: Allow
-        #    priority: 1003
-        #    direction: Inbound
+        resource_group: dprk2
+        name: dprk_security_group
+    
+        rules:
+          - name: 'allow_rdp'
+            protocol: Tcp
+            destination_port_range: 3389
+            access: Allow
+            priority: 1001
+            direction: Inbound
+          - name: 'allow_web_traffic'
+            protocol: Tcp
+            destination_port_range:
+              - 80
+              - 443
+            access: Allow
+            priority: 1002
+            direction: Inbound
+          - name: 'allow_powershell_remoting'
+            protocol: Tcp
+            destination_port_range: 
+              - 5985
+              - 5986
+            access: Allow
+            priority: 1003
+            direction: Inbound
 
-    - name: Network Interface
-      debug:
-        msg: "Go to network interface doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_networkinterface_module.html"
+    #- name: Network Interface
+    #  debug:
+    #    msg: "Go to network interface doc https://docs.ansible.com/ansible/latest/collections/azure/azcollection/azure_rm_networkinterface_module.html"
 
-    - name: Create a network interface
+    - name: Create Network Interface
       azure_rm_networkinterface:
-        name: "{{vnet_name}}"
-        resource_group: ansible-rg
-        virtual_network: vNet
-        subnet_name: "{{vnet_subnet}}"
-        security_group: "{{security_group_name}}"
-        ip_configurations:
-          - name: default
-            public_ip_address_name: "{{public_ip_name}}"
-            primary: True
+        resource_group: dprk2
+        name: dprk2_int
+        virtual_network: dprk2_lan
+        subnet_name: dprk2_subnet
+        security_group: dprk_security_group
+        public_ip_name: dprk2_public_ip
+        state: present
 
-    - name: Create your VM
-      debug:
-        msg: "Go to vm doc https://learn.microsoft.com/en-us/cli/azure/vm?view=azure-cli-latest#az-vm-create"
+    # - name: Create your VM
+    #  shell: 
+    #  debug:
+    #    msg: "Go to vm doc https://learn.microsoft.com/en-us/cli/azure/vm?view=azure-cli-latest#az-vm-create"
 
-    - name: Create your windows VM
-      shell: |
-        az vm create \
-          --resource-group ansible-rg \
-          --name testvm12 \
-          --image Win2022AzureEditionCore \
-          --public-ip-sku Standard \
-          --admin-username "{{lookup('env', 'vm_user')}}" \
-          --admin-password "{{lookup('env', 'vm_password')}}" \
-          --vnet-name "{{vnet_name}}"
+    #- name: Create your VM
+    #  debug:
+    #    msg: "Go to vm doc https://learn.microsoft.com/en-us/cli/azure/vm?view=azure-cli-latest#az-vm-create"
+  
+    - name: Create a Storage Account for Azure Function
+      azure_rm_storageaccount:
+        resource_group: dprk2
+        name: dprk2st
+        kind: StorageV2
+        account_type: Standard_LRS
+
+    - name: Create VM
+      azure_rm_virtualmachine: 
+        resource_group: dprk2 
+        name: dprk2vm
+        vm_size: Standard_DS1_v2
+        public_ip_allocation : Static
+        admin_username: admindprk2
+        admin_password: P@ssw0rd2024
+        network_interfaces: dprk2_int
+        storage_account: dprk2st
+        os_type: Windows
+        image:
+          offer: WindowsServer
+          publisher: MicrosoftWindowsServer
+          sku: 2019-Datacenter
+          version: latest

@@ -5,7 +5,7 @@
   vars:
     resource_group: ansible-rg
     az_plan_name: appservice-plan
-    storage_account_name: "2024baschelor2"
+    storage_account_name: "2024baschelor2aaka"
 
   tasks:
   - name: Login to azure
@@ -42,7 +42,7 @@
   - name: Create container based function app
     azure_rm_functionapp:
       resource_group: "{{ resource_group }}"
-      name: mario-33000-whoiam
+      name: aaka-33100-whoiam
       storage_account: "{{storage_account_name}}"
       plan:
         resource_group: "{{ resource_group }}"
@@ -52,7 +52,7 @@
         registry_server_url: index.docker.io
 
 
-  #- name: Create ressources groupe
+  #- name: Create ressources groupeazure_rm_resourcegroup
   #  shell: |
   #    az group create -l eastus -n myRss
 #
